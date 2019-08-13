@@ -31,14 +31,14 @@ def register():
             'INSERT INTO user (username, password) VALUES (?, ?)',
             (username, generate_password_hash(password))
         )
-        # SQLite3のみでの関数で、postgresでは使えない
-        id = db.execute(
-            'SELECT last_insert_rowid() as last_insert_rowid'
+        inserted_user = db.execute(
+            'SELECT id FROM user WHERE username = ?',
+            (username,)
         ).fetchone()
         db.commit()
 
         return jsonify({
-            'id': id['last_insert_rowid']
+            'id': inserted_user['id']
         }), 201
 
     return jsonify({

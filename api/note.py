@@ -2,6 +2,7 @@ from flask import (
     Blueprint, request, session, jsonify
 )
 from werkzeug.exceptions import abort
+from datetime import datetime
 
 from api.db import get_db
 from api.auth import login_required
@@ -59,28 +60,26 @@ def create():
     elif not sentence:
         message = 'sentence is required.'
 
-    print(root_note_id)
-
     if message is None:
         db.execute(
             'INSERT INTO note (author_id, root_note_id, kind, sentence) VALUES (?, ?, ?, ?)',
             (author_id, root_note_id, kind, sentence)
         )
-        # SQLite3のみでの関数で、postgresでは使えない
-        id = db.execute(
-            'SELECT last_insert_rowid() as last_insert_rowid'
+        inserted_note = db.execute(
+            'SELECT id FROM note WHERE author_id = ? ORDER BY created DESC',
+            (author_id,)
         ).fetchone()
 
         if root_note_id is None:
             db.execute(
                 'UPDATE note SET root_note_id = ? WHERE id = ?',
-                (id['last_insert_rowid'], id['last_insert_rowid'])
+                (inserted_note['id'], inserted_note['id'])
             )
 
         db.commit()
 
         return jsonify({
-            'id': id['last_insert_rowid']
+            'id': inserted_note['id']
         }), 201
 
     return jsonify({
@@ -103,8 +102,8 @@ def update():
 
     if message is None:
         db.execute(
-            'UPDATE note SET sentence = ? WHERE id = ?',
-            (sentence, id)
+            'UPDATE note SET sentence = ?, updated = ? WHERE id = ?',
+            (sentence, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), id)
         )
         db.commit()
 
@@ -125,14 +124,14 @@ def destroy():
     if not id:
         message = 'id is required.'
 
-    delete_note = db.execute(
+    deleted_note = db.execute(
         'SELECT * FROM note WHERE id = ?', (id,)
     ).fetchone()
 
     if message is None:
         db.execute(
             'DELETE FROM note WHERE root_note_id = ? AND kind >= ?',
-            (delete_note['root_note_id'], delete_note['kind'])
+            (deleted_note['root_note_id'], deleted_note['kind'])
         )
         db.commit()
 
