@@ -1,5 +1,5 @@
 from flask import (
-    Blueprint, request, session, jsonify
+    Blueprint, g, request, session, jsonify
 )
 from werkzeug.exceptions import abort
 from datetime import datetime
@@ -22,20 +22,22 @@ def index():
         notes = db.execute(
             'SELECT n.id, author_id, root_note_id, created, updated, kind, sentence'
             ' FROM note n JOIN user u ON n.author_id = u.id'
-            ' WHERE root_note_id = ? ORDER BY kind ASC',
-            (root_note_id)
+            ' WHERE root_note_id = ? AND author_id = ? ORDER BY kind ASC',
+            (root_note_id, g.user['id'])
         ).fetchall()
     elif kind:
         notes = db.execute(
             'SELECT n.id, author_id, root_note_id, created, updated, kind, sentence'
             ' FROM note n JOIN user u ON n.author_id = u.id'
-            ' WHERE kind = ? ORDER BY updated DESC',
-            (kind)
+            ' WHERE kind = ? AND author_id = ? ORDER BY updated DESC',
+            (kind, g.user['id'])
         ).fetchall()
     else:
         notes = db.execute(
             'SELECT n.id, author_id, root_note_id, created, updated, kind, sentence'
             ' FROM note n JOIN user u ON n.author_id = u.id'
+            ' WHERE author_id = ? ORDER BY n.id ASC',
+            (g.user['id'],)
         ).fetchall()
 
     return jsonify({
@@ -46,28 +48,37 @@ def index():
 @bp.route('/', methods=['POST'])
 @login_required
 def create():
-    author_id = request.get_json().get('author_id')
     root_note_id = request.get_json().get('root_note_id')
     kind = request.get_json().get('kind')
     sentence = request.get_json().get('sentence')
     db = get_db()
     message = None
 
-    if not author_id:
-        message = 'author_id is required.'
-    elif not kind:
-        message = 'kind is required.'
+    if not kind:
+        message = 'Kind is required.'
     elif not sentence:
-        message = 'sentence is required.'
+        message = 'Sentence is required.'
+    elif root_note_id and db.execute(
+        'SELECT * FROM note '
+        ' WHERE root_note_id = ? AND kind = ?',
+        (root_note_id, kind)
+    ).fetchone() is not None:
+        message = 'Not related note.'
+    elif root_note_id and db.execute(
+        'SELECT * FROM note '
+        ' WHERE id = ? AND author_id = ? AND kind = ?',
+        (root_note_id, g.user['id'], kind - 1)
+    ).fetchone() is None:
+        message = 'Not related note.'
 
     if message is None:
         db.execute(
             'INSERT INTO note (author_id, root_note_id, kind, sentence) VALUES (?, ?, ?, ?)',
-            (author_id, root_note_id, kind, sentence)
+            (g.user['id'], root_note_id, kind, sentence)
         )
         inserted_note = db.execute(
             'SELECT id FROM note WHERE author_id = ? ORDER BY created DESC',
-            (author_id,)
+            (g.user['id'],)
         ).fetchone()
 
         if root_note_id is None:
@@ -96,14 +107,20 @@ def update():
     message = None
 
     if not id:
-        message = 'id is required.'
+        message = 'Id is required.'
     elif not sentence:
-        message = 'sentence is required.'
+        message = 'Sentence is required.'
+    elif db.execute(
+        'SELECT * FROM note '
+        ' WHERE id = ? AND author_id = ?',
+        (id, g.user['id'])
+    ).fetchone() is None:
+        message = 'Note not found.'
 
     if message is None:
         db.execute(
-            'UPDATE note SET sentence = ?, updated = ? WHERE id = ?',
-            (sentence, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), id)
+            'UPDATE note SET sentence = ?, updated = ? WHERE id = ? AND author_id = ?',
+            (sentence, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), id, g.user['id'])
         )
         db.commit()
 
@@ -122,10 +139,17 @@ def destroy():
     message = None
 
     if not id:
-        message = 'id is required.'
+        message = 'Id is required.'
+    elif db.execute(
+        'SELECT * FROM note '
+        ' WHERE id = ? AND author_id = ?',
+        (id, g.user['id'])
+    ).fetchone() is None:
+        message = 'Note not found.'
 
     deleted_note = db.execute(
-        'SELECT * FROM note WHERE id = ?', (id,)
+        'SELECT * FROM note WHERE id = ? AND author_id = ?',
+        (id, g.user['id'])
     ).fetchone()
 
     if message is None:
