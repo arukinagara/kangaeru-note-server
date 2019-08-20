@@ -1,43 +1,42 @@
-from flask import (
-    Blueprint, g, request, session, jsonify
-)
+from flask import Blueprint, g, request, session, jsonify
+from flask_jwt_extended import jwt_required, get_current_user
 from werkzeug.exceptions import abort
 from datetime import datetime
 
 from api.db import get_db
-from api.auth import login_required
 
 bp = Blueprint('note', __name__)
 
 
 @bp.route('/', methods=['GET'])
-@login_required
+@jwt_required
 def index():
     root_note_id :int = request.args.get('root')
     kind :int = request.args.get('kind')
     notes = []
 
     db = get_db()
+
     if root_note_id:
         notes = db.execute(
             'SELECT n.id, author_id, root_note_id, created, updated, kind, sentence'
             ' FROM note n JOIN user u ON n.author_id = u.id'
             ' WHERE root_note_id = ? AND author_id = ? ORDER BY kind ASC',
-            (root_note_id, g.user['id'])
+            (root_note_id, get_current_user()['id'])
         ).fetchall()
     elif kind:
         notes = db.execute(
             'SELECT n.id, author_id, root_note_id, created, updated, kind, sentence'
             ' FROM note n JOIN user u ON n.author_id = u.id'
             ' WHERE kind = ? AND author_id = ? ORDER BY updated DESC',
-            (kind, g.user['id'])
+            (kind, get_current_user()['id'])
         ).fetchall()
     else:
         notes = db.execute(
             'SELECT n.id, author_id, root_note_id, created, updated, kind, sentence'
             ' FROM note n JOIN user u ON n.author_id = u.id'
             ' WHERE author_id = ? ORDER BY n.id ASC',
-            (g.user['id'],)
+            (get_current_user()['id'],)
         ).fetchall()
 
     return jsonify({
@@ -46,7 +45,7 @@ def index():
 
 
 @bp.route('/', methods=['POST'])
-@login_required
+@jwt_required
 def create():
     root_note_id = request.get_json().get('root_note_id')
     kind = request.get_json().get('kind')
@@ -99,7 +98,7 @@ def create():
 
 
 @bp.route('/', methods=['PUT'])
-@login_required
+@jwt_required
 def update():
     id = request.get_json().get('id')
     sentence = request.get_json().get('sentence')
@@ -132,7 +131,7 @@ def update():
 
 
 @bp.route('/', methods=['DELETE'])
-@login_required
+@jwt_required
 def destroy():
     id = request.get_json().get('id')
     db = get_db()

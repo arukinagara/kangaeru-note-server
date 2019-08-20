@@ -1,13 +1,19 @@
 import functools
 
-from flask import (
-    Blueprint, g, request, session, jsonify
-)
+from flask import Flask, current_app, Blueprint, g, request, session, jsonify
+from flask_jwt_extended import JWTManager, create_access_token
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from api.db import get_db
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
+
+# blueprint内でappを使用するための設定
+app = Flask(__name__)
+# 使用する時はwith句内で、current_appとして使う
+with app.app_context():
+    current_app.config['JWT_SECRET_KEY'] = 'super-secret'
+    jwt = JWTManager(current_app)
 
 
 @bp.route('/register', methods=['POST'])
@@ -54,7 +60,8 @@ def login():
     message = None
 
     user = db.execute(
-        'SELECT * FROM user WHERE username = ?', (username,)
+        'SELECT * FROM user WHERE username = ?',
+        (username,)
     ).fetchone()
 
     if user is None:
@@ -63,13 +70,9 @@ def login():
         message = 'Incorrect password.'
 
     if message is None:
-        session.clear()
-        session['user_id'] = user['id']
-        return jsonify(), 204
-
-    return jsonify({
-        'message': message
-    }), 401
+        # flask_jwt_extendedを使ってユーザ名からアクセストークンを生成する
+        access_token = create_access_token(identity = username)
+        return jsonify(access_token = access_token), 200
 
 
 @bp.route('/logout')
@@ -78,28 +81,14 @@ def logout():
 
     return jsonify(), 204
 
+# get_current_userがコールされると(ここではnote.pyで使用している)、以下のメソッドが呼ばれる
+# identityはユーザ名で、ユーザオブジェウトが返却されるように作っている
+@jwt.user_loader_callback_loader
+def user_loader_callback(identity):
+    db = get_db()
+    user = db.execute(
+        'SELECT * FROM user WHERE username = ?',
+        (identity,)
+    ).fetchone()
 
-@bp.before_app_request
-def load_logged_in_user():
-    user_id = session.get('user_id')
-
-    if user_id is None:
-        g.user = None
-    else:
-        g.user = get_db().execute(
-            'SELECT * FROM user WHERE id = ?', (user_id,)
-        ).fetchone()
-
-
-def login_required(view):
-    message = None
-    @functools.wraps(view)
-    def wrapped_view(**kwargs):
-        if g.user is None:
-            return jsonify({
-                'message': 'login required.'
-            }), 401
-
-        return view(**kwargs)
-
-    return wrapped_view
+    return user

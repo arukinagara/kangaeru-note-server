@@ -38,6 +38,9 @@ def create_app(test_config=None):
 
     from . import auth
     app.register_blueprint(auth.bp)
+    # auth.pyで定義しているJWTマネージャのオブジェクト(jwt)をインポートし、初期化している
+    from .auth import jwt
+    jwt.init_app(app)
 
     from . import note
     app.register_blueprint(note.bp)
