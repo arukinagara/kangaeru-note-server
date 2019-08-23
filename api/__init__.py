@@ -2,7 +2,7 @@ import os
 
 from flask import Flask, jsonify
 from flask_cors import CORS
-
+from flask_jwt_extended import JWTManager
 
 def create_app(test_config=None):
     # create and configure the app
@@ -10,10 +10,16 @@ def create_app(test_config=None):
     app.config.from_mapping(
         SECRET_KEY='dev',
         DATABASE=os.path.join(app.instance_path, 'api.sqlite'),
+        # flask_jwt_extended用の定義
+        JWT_SECRET_KEY='super-secret',
+        JWT_ERROR_MESSAGE_KEY='message',
     )
 
     # enable CORS
     CORS(app, resources={r'/*': {'origins': '*'}})
+
+    # flask_jwt_extendedを初期化
+    jwt = JWTManager(app)
 
     if test_config is None:
         # load the instance config, if it exists, when not testing
@@ -30,7 +36,7 @@ def create_app(test_config=None):
 
     # sanity check route
     @app.route('/hello', methods=['GET'])
-    def ping_pong():
+    def hello():
         return jsonify('Hello, World!!')
 
     from . import db
@@ -38,9 +44,6 @@ def create_app(test_config=None):
 
     from . import auth
     app.register_blueprint(auth.bp)
-    # auth.pyで定義しているJWTマネージャのオブジェクト(jwt)をインポートし、初期化している
-    from .auth import jwt
-    jwt.init_app(app)
 
     from . import note
     app.register_blueprint(note.bp)

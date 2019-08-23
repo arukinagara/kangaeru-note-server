@@ -2,7 +2,6 @@ from flask import Blueprint, g, request, session, jsonify
 from flask_jwt_extended import jwt_required, get_current_user
 from werkzeug.exceptions import abort
 from datetime import datetime
-
 from api.db import get_db
 
 bp = Blueprint('note', __name__)
@@ -14,28 +13,27 @@ def index():
     root_note_id :int = request.args.get('root')
     kind :int = request.args.get('kind')
     notes = []
-
     db = get_db()
+
+    select_statement = 'SELECT n.id, author_id, root_note_id, created, updated, kind, sentence'\
+                       ' FROM note n JOIN user u ON n.author_id = u.id'
 
     if root_note_id:
         notes = db.execute(
-            'SELECT n.id, author_id, root_note_id, created, updated, kind, sentence'
-            ' FROM note n JOIN user u ON n.author_id = u.id'
-            ' WHERE root_note_id = ? AND author_id = ? ORDER BY kind ASC',
+            select_statement
+            + ' WHERE root_note_id = ? AND author_id = ? ORDER BY kind ASC',
             (root_note_id, get_current_user()['id'])
         ).fetchall()
     elif kind:
         notes = db.execute(
-            'SELECT n.id, author_id, root_note_id, created, updated, kind, sentence'
-            ' FROM note n JOIN user u ON n.author_id = u.id'
-            ' WHERE kind = ? AND author_id = ? ORDER BY updated DESC',
+            select_statement
+            + ' WHERE kind = ? AND author_id = ? ORDER BY updated DESC',
             (kind, get_current_user()['id'])
         ).fetchall()
     else:
         notes = db.execute(
-            'SELECT n.id, author_id, root_note_id, created, updated, kind, sentence'
-            ' FROM note n JOIN user u ON n.author_id = u.id'
-            ' WHERE author_id = ? ORDER BY n.id ASC',
+            select_statement
+            + ' WHERE author_id = ? ORDER BY n.id ASC',
             (get_current_user()['id'],)
         ).fetchall()
 
@@ -66,18 +64,18 @@ def create():
     elif root_note_id and db.execute(
         'SELECT * FROM note '
         ' WHERE id = ? AND author_id = ? AND kind = ?',
-        (root_note_id, g.user['id'], kind - 1)
+        (root_note_id, get_current_user()['id'], kind - 1)
     ).fetchone() is None:
         message = 'Not related note.'
 
     if message is None:
         db.execute(
             'INSERT INTO note (author_id, root_note_id, kind, sentence) VALUES (?, ?, ?, ?)',
-            (g.user['id'], root_note_id, kind, sentence)
+            (get_current_user()['id'], root_note_id, kind, sentence)
         )
         inserted_note = db.execute(
             'SELECT id FROM note WHERE author_id = ? ORDER BY created DESC',
-            (g.user['id'],)
+            (get_current_user()['id'],)
         ).fetchone()
 
         if root_note_id is None:
@@ -112,14 +110,14 @@ def update():
     elif db.execute(
         'SELECT * FROM note '
         ' WHERE id = ? AND author_id = ?',
-        (id, g.user['id'])
+        (id, get_current_user()['id'],)
     ).fetchone() is None:
         message = 'Note not found.'
 
     if message is None:
         db.execute(
             'UPDATE note SET sentence = ?, updated = ? WHERE id = ? AND author_id = ?',
-            (sentence, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), id, g.user['id'])
+            (sentence, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), id, get_current_user()['id'])
         )
         db.commit()
 
@@ -142,13 +140,13 @@ def destroy():
     elif db.execute(
         'SELECT * FROM note '
         ' WHERE id = ? AND author_id = ?',
-        (id, g.user['id'])
+        (id, get_current_user()['id'])
     ).fetchone() is None:
         message = 'Note not found.'
 
     deleted_note = db.execute(
         'SELECT * FROM note WHERE id = ? AND author_id = ?',
-        (id, g.user['id'])
+        (id, get_current_user()['id'])
     ).fetchone()
 
     if message is None:

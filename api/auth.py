@@ -1,19 +1,33 @@
 import functools
-
 from flask import Flask, current_app, Blueprint, g, request, session, jsonify
-from flask_jwt_extended import JWTManager, create_access_token
+from flask_jwt_extended import (
+    JWTManager, create_access_token, create_refresh_token,
+    jwt_refresh_token_required, get_jwt_identity
+)
 from werkzeug.security import check_password_hash, generate_password_hash
-
 from api.db import get_db
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
+
 
 # blueprint内でappを使用するための設定
 app = Flask(__name__)
 # 使用する時はwith句内で、current_appとして使う
 with app.app_context():
-    current_app.config['JWT_SECRET_KEY'] = 'super-secret'
     jwt = JWTManager(current_app)
+
+    # get_current_userがコールされると(ここではnote.pyで使用している)、
+    # @user_loader_callback_loaderが付与されているメソッドが呼ばれる
+    # identityはユーザ名で、ユーザオブジェクトが返却されるように作っている
+    @jwt.user_loader_callback_loader
+    def user_loader_callback(identity):
+        db = get_db()
+        current_user = db.execute(
+            'SELECT * FROM user WHERE username = ?',
+            (identity,)
+        ).fetchone()
+
+        return current_user
 
 
 @bp.route('/register', methods=['POST'])
@@ -70,25 +84,18 @@ def login():
         message = 'Incorrect password.'
 
     if message is None:
-        # flask_jwt_extendedを使ってユーザ名からアクセストークンを生成する
-        access_token = create_access_token(identity = username)
-        return jsonify(access_token = access_token), 200
+        # flask_jwt_extendedを使ってユーザ名からアクセス/リフレッシュトークンを生成する
+        ret = {
+            'access_token': create_access_token(identity = username),
+            'refresh_token': create_refresh_token(identity = username)
+        }
+        return jsonify(ret), 200
 
 
-@bp.route('/logout')
-def logout():
-    session.clear()
-
-    return jsonify(), 204
-
-# get_current_userがコールされると(ここではnote.pyで使用している)、以下のメソッドが呼ばれる
-# identityはユーザ名で、ユーザオブジェウトが返却されるように作っている
-@jwt.user_loader_callback_loader
-def user_loader_callback(identity):
-    db = get_db()
-    user = db.execute(
-        'SELECT * FROM user WHERE username = ?',
-        (identity,)
-    ).fetchone()
-
-    return user
+# アクセストークンが切れた場合、リフレッシュトークンでこのURIにアクセスし、アクセストークンを更新する
+@bp.route('/refresh', methods=['POST'])
+@jwt_refresh_token_required
+def refresh():
+    username = get_jwt_identity()
+    access_token = create_access_token(identity = username)
+    return jsonify(access_token = access_token), 200

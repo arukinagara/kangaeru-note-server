@@ -1,19 +1,23 @@
 import pytest
 import json
-from flask import g, session
+from flask import Flask, g, session
+from flask_jwt_extended import (
+    JWTManager, create_access_token, create_refresh_token,
+    jwt_refresh_token_required, get_jwt_identity, decode_token
+)
 from api.db import get_db
 
 
 # ユーザ登録 異常系
 @pytest.mark.parametrize(('req_payload', 'res_payload'), (
-    (json.dumps({'username': '', 'password': ''}), {'message': 'Username is required.'}),
-    (json.dumps({'username': 'user', 'password': ''}), {'message': 'Password is required.'}),
-    (json.dumps({'username': 'test', 'password': 'password'}), {'message': 'User test is already registered.'}),
+    ({'username': '', 'password': ''}, {'message': 'Username is required.'}),
+    ({'username': 'user', 'password': ''}, {'message': 'Password is required.'}),
+    ({'username': 'test', 'password': 'password'}, {'message': 'User test is already registered.'}),
 ))
 def test_register_validate_input(client, req_payload, res_payload):
     response = client.post('/auth/register',
-        data = req_payload,
-        content_type = 'application/json'
+        headers = {'Content-Type': 'application/json'},
+        data = json.dumps(req_payload),
     )
     assert response.status_code == 400
     assert json.loads(response.data) == res_payload
@@ -21,12 +25,12 @@ def test_register_validate_input(client, req_payload, res_payload):
 
 # ユーザ登録 正常系
 @pytest.mark.parametrize(('req_payload'), (
-    (json.dumps({'username': 'user', 'password': 'password'})),
+    ({'username': 'user', 'password': 'password'}),
 ))
 def test_register(client, app, req_payload):
     response = client.post('/auth/register',
-        data = req_payload,
-        content_type = 'application/json'
+        headers = {'Content-Type': 'application/json'},
+        data = json.dumps(req_payload),
     )
     assert response.status_code == 201
     with app.app_context():
@@ -37,35 +41,37 @@ def test_register(client, app, req_payload):
 
 # ログイン 異常系
 @pytest.mark.parametrize(('req_payload', 'res_payload'), (
-    (json.dumps({'username': 'user', 'password': 'test'}), {'message': 'Incorrect username.'}),
-    (json.dumps({'username': 'test', 'password': 'password'}), {'message': 'Incorrect password.'}),
+    ({'username': '', 'password': ''}, {'message': 'Username is required.'}),
+    ({'username': 'user', 'password': ''}, {'message': 'Password is required.'}),
 ))
 def test_login_validate_input(client, req_payload, res_payload):
-    response = client.post('/auth/login',
-        data = req_payload,
-        content_type = 'application/json'
+    response = client.post('/auth/register',
+        headers = {'Content-Type': 'application/json'},
+        data = json.dumps(req_payload),
     )
-    assert response.status_code == 401
+    assert response.status_code == 400
     assert json.loads(response.data) == res_payload
 
 
-# ログイン/ログアウト 正常系
+# ログイン 正常系
 @pytest.mark.parametrize(('req_payload'), (
-    (json.dumps({'username': 'test', 'password': 'test'})),
+    ({'username': 'test', 'password': 'test'}),
 ))
-def test_login_and_logout(client, app, req_payload):
-    response = client.post('/auth/login',
-        data = req_payload,
-        content_type = 'application/json'
-    )
-    assert response.status_code == 204
-    with client:
-        client.get('/')
-        assert session['user_id'] == 1
-        assert g.user['username'] == 'test'
+def test_login(app, client, req_payload):
+    with app.app_context():
+        app.config['JWT_SECRET_KEY'] = 'test'
+        JWTManager(app)
+        access_token = create_access_token(req_payload['username'])
+        refresh_token = create_refresh_token(req_payload['username'])
 
-    response = client.get('/auth/logout')
-    assert response.status_code == 204
-    with client:
-        client.get('/')
-        assert 'user_id' not in session
+        response = client.post('/auth/login',
+            headers = {'Content-Type': 'application/json'},
+            data = json.dumps(req_payload),
+        )
+
+        res_access_token = json.loads(response.data)['access_token']
+        res_refresh_token = json.loads(response.data)['refresh_token']
+
+        assert response.status_code == 200
+        assert decode_token(res_access_token)['identity'] == req_payload['username']
+        assert decode_token(res_refresh_token)['identity'] == req_payload['username']
