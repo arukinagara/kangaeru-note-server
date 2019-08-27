@@ -3,6 +3,7 @@ import os
 from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
+from api.db import get_db
 
 def create_app(test_config=None):
     # create and configure the app
@@ -20,6 +21,14 @@ def create_app(test_config=None):
 
     # flask_jwt_extendedを初期化
     jwt = JWTManager(app)
+    @jwt.user_loader_callback_loader
+    def user_loader_callback(identity):
+        db = get_db()
+        current_user = db.execute(
+            'SELECT * FROM user WHERE username = ?',
+            (identity,)
+        ).fetchone()
+        return current_user
 
     if test_config is None:
         # load the instance config, if it exists, when not testing

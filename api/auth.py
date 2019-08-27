@@ -1,8 +1,8 @@
 import functools
-from flask import Flask, current_app, Blueprint, g, request, session, jsonify
+from flask import Flask, current_app, Blueprint, g, request, jsonify
 from flask_jwt_extended import (
-    JWTManager, create_access_token, create_refresh_token,
-    jwt_refresh_token_required, get_jwt_identity
+    create_access_token, create_refresh_token, jwt_refresh_token_required,
+    get_jwt_identity
 )
 from werkzeug.security import check_password_hash, generate_password_hash
 from api.db import get_db
@@ -10,24 +10,24 @@ from api.db import get_db
 bp = Blueprint('auth', __name__, url_prefix='/auth')
 
 
-# blueprint内でappを使用するための設定
-app = Flask(__name__)
-# 使用する時はwith句内で、current_appとして使う
-with app.app_context():
-    jwt = JWTManager(current_app)
-
-    # get_current_userがコールされると(ここではnote.pyで使用している)、
-    # @user_loader_callback_loaderが付与されているメソッドが呼ばれる
-    # identityはユーザ名で、ユーザオブジェクトが返却されるように作っている
-    @jwt.user_loader_callback_loader
-    def user_loader_callback(identity):
-        db = get_db()
-        current_user = db.execute(
-            'SELECT * FROM user WHERE username = ?',
-            (identity,)
-        ).fetchone()
-
-        return current_user
+# # blueprint内でappを使用するための設定
+# app = Flask(__name__)
+# # 使用する時はwith句内で、current_appとして使う
+# with app.app_context():
+#     jwt = JWTManager(current_app)
+#
+#     # get_current_userがコールされると(ここではnote.pyで使用している)、
+#     # @user_loader_callback_loaderが付与されているメソッドが呼ばれる
+#     # identityはユーザ名で、ユーザオブジェクトが返却されるように作っている
+#     @jwt.user_loader_callback_loader
+#     def user_loader_callback(identity):
+#         db = get_db()
+#         current_user = db.execute(
+#             'SELECT * FROM user WHERE username = ?',
+#             (identity,)
+#         ).fetchone()
+#
+#         return current_user
 
 
 @bp.route('/register', methods=['POST'])

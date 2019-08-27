@@ -29,7 +29,7 @@ def test_register_validate_input(client, req_payload, res_payload):
 @pytest.mark.parametrize(('req_payload'), (
     ({'username': 'user', 'password': 'password'}),
 ))
-def test_register(client, app, req_payload):
+def test_register(app, client, req_payload):
     response = client.post('/auth/register',
         headers = {'Content-Type': 'application/json'},
         data = json.dumps(req_payload),
