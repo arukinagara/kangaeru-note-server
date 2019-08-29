@@ -8,34 +8,30 @@ from api.db import get_db
 @pytest.mark.parametrize(('query_parameter', 'res_payload'), (
     ('?root=1',
         {'notes': [
-            {'id': 1, 'author_id': 1, 'root_note_id': 1, 'created': 'Tue, 01 Jan 2019 00:00:00 GMT',
-                'updated': 'Tue, 01 Jan 2019 00:00:00 GMT', 'kind': 1, 'sentence': '観察'},
-            {'id': 2, 'author_id': 1, 'root_note_id': 1, 'created': 'Tue, 01 Jan 2019 00:00:00 GMT',
-                'updated': 'Tue, 01 Jan 2019 00:00:00 GMT', 'kind': 2, 'sentence': '仮説'},
-            {'id': 3, 'author_id': 1, 'root_note_id': 1, 'created': 'Tue, 01 Jan 2019 00:00:00 GMT',
-                'updated': 'Tue, 01 Jan 2019 00:00:00 GMT', 'kind': 3, 'sentence': '実験'},
-            {'id': 4, 'author_id': 1, 'root_note_id': 1, 'created': 'Tue, 01 Jan 2019 00:00:00 GMT',
-                'updated': 'Tue, 01 Jan 2019 00:00:00 GMT', 'kind': 4, 'sentence': '考察'}
+            {'id': 1, 'author_id': 1, 'root_note_id': 1, 'created': 'Tue, 01 Jan 2019 00:00:00 GMT', 'updated': 'Tue, 01 Jan 2019 00:00:00 GMT', 'kind': 1, 'sentence': '観察'},
+            {'id': 2, 'author_id': 1, 'root_note_id': 1, 'created': 'Tue, 01 Jan 2019 00:00:00 GMT', 'updated': 'Tue, 01 Jan 2019 00:00:00 GMT', 'kind': 2, 'sentence': '仮説'},
+            {'id': 3, 'author_id': 1, 'root_note_id': 1, 'created': 'Tue, 01 Jan 2019 00:00:00 GMT', 'updated': 'Tue, 01 Jan 2019 00:00:00 GMT', 'kind': 3, 'sentence': '実験'},
+            {'id': 4, 'author_id': 1, 'root_note_id': 1, 'created': 'Tue, 01 Jan 2019 00:00:00 GMT', 'updated': 'Tue, 01 Jan 2019 00:00:00 GMT', 'kind': 4, 'sentence': '考察'}
         ]}),
     ('?kind=1',
         {'notes': [
-            {'id': 1, 'author_id': 1, 'root_note_id': 1, 'created': 'Tue, 01 Jan 2019 00:00:00 GMT',
-                'updated': 'Tue, 01 Jan 2019 00:00:00 GMT', 'kind': 1, 'sentence': '観察'},
-            {'id': 5, 'author_id': 1, 'root_note_id': 5, 'created': 'Tue, 01 Jan 2019 00:00:00 GMT',
-                'updated': 'Tue, 01 Jan 2019 00:00:00 GMT', 'kind': 1, 'sentence': '観察'}
+            {'id': 1, 'author_id': 1, 'root_note_id': 1, 'created': 'Tue, 01 Jan 2019 00:00:00 GMT', 'updated': 'Tue, 01 Jan 2019 00:00:00 GMT', 'kind': 1, 'sentence': '観察'},
+            {'id': 5, 'author_id': 1, 'root_note_id': 5, 'created': 'Tue, 01 Jan 2019 00:00:00 GMT', 'updated': 'Tue, 01 Jan 2019 00:00:00 GMT', 'kind': 1, 'sentence': '観察'},
+            {'id': 7, 'author_id': 1, 'root_note_id': 7, 'created': 'Tue, 01 Jan 2019 00:00:00 GMT', 'updated': 'Tue, 01 Jan 2019 00:00:00 GMT', 'kind': 1, 'sentence': '観察'},
+            {'id': 9, 'author_id': 1, 'root_note_id': 9, 'created': 'Tue, 01 Jan 2019 00:00:00 GMT', 'updated': 'Tue, 01 Jan 2019 00:00:00 GMT', 'kind': 1, 'sentence': '観察'}
         ]}),
     ('',
         {'notes': [
-            {'id': 1, 'author_id': 1, 'root_note_id': 1, 'created': 'Tue, 01 Jan 2019 00:00:00 GMT',
-                'updated': 'Tue, 01 Jan 2019 00:00:00 GMT', 'kind': 1, 'sentence': '観察'},
-            {'id': 2, 'author_id': 1, 'root_note_id': 1, 'created': 'Tue, 01 Jan 2019 00:00:00 GMT',
-                'updated': 'Tue, 01 Jan 2019 00:00:00 GMT', 'kind': 2, 'sentence': '仮説'},
-            {'id': 3, 'author_id': 1, 'root_note_id': 1, 'created': 'Tue, 01 Jan 2019 00:00:00 GMT',
-                'updated': 'Tue, 01 Jan 2019 00:00:00 GMT', 'kind': 3, 'sentence': '実験'},
-            {'id': 4, 'author_id': 1, 'root_note_id': 1, 'created': 'Tue, 01 Jan 2019 00:00:00 GMT',
-                'updated': 'Tue, 01 Jan 2019 00:00:00 GMT', 'kind': 4, 'sentence': '考察'},
-            {'id': 5, 'author_id': 1, 'root_note_id': 5, 'created': 'Tue, 01 Jan 2019 00:00:00 GMT',
-                'updated': 'Tue, 01 Jan 2019 00:00:00 GMT', 'kind': 1, 'sentence': '観察'}
+            {'id': 1, 'author_id': 1, 'root_note_id': 1, 'created': 'Tue, 01 Jan 2019 00:00:00 GMT', 'updated': 'Tue, 01 Jan 2019 00:00:00 GMT', 'kind': 1, 'sentence': '観察'},
+            {'id': 2, 'author_id': 1, 'root_note_id': 1, 'created': 'Tue, 01 Jan 2019 00:00:00 GMT', 'updated': 'Tue, 01 Jan 2019 00:00:00 GMT', 'kind': 2, 'sentence': '仮説'},
+            {'id': 3, 'author_id': 1, 'root_note_id': 1, 'created': 'Tue, 01 Jan 2019 00:00:00 GMT', 'updated': 'Tue, 01 Jan 2019 00:00:00 GMT', 'kind': 3, 'sentence': '実験'},
+            {'id': 4, 'author_id': 1, 'root_note_id': 1, 'created': 'Tue, 01 Jan 2019 00:00:00 GMT', 'updated': 'Tue, 01 Jan 2019 00:00:00 GMT', 'kind': 4, 'sentence': '考察'},
+            {'id': 5, 'author_id': 1, 'root_note_id': 5, 'created': 'Tue, 01 Jan 2019 00:00:00 GMT', 'updated': 'Tue, 01 Jan 2019 00:00:00 GMT', 'kind': 1, 'sentence': '観察'},
+            {'id': 7, 'author_id': 1, 'root_note_id': 7, 'created': 'Tue, 01 Jan 2019 00:00:00 GMT', 'updated': 'Tue, 01 Jan 2019 00:00:00 GMT', 'kind': 1, 'sentence': '観察'},
+            {'id': 8, 'author_id': 1, 'root_note_id': 7, 'created': 'Tue, 01 Jan 2019 00:00:00 GMT', 'updated': 'Tue, 01 Jan 2019 00:00:00 GMT', 'kind': 2, 'sentence': '仮説'},
+            {'id': 9, 'author_id': 1, 'root_note_id': 9, 'created': 'Tue, 01 Jan 2019 00:00:00 GMT', 'updated': 'Tue, 01 Jan 2019 00:00:00 GMT', 'kind': 1, 'sentence': '観察'},
+            {'id': 10, 'author_id': 1, 'root_note_id': 9, 'created': 'Tue, 01 Jan 2019 00:00:00 GMT', 'updated': 'Tue, 01 Jan 2019 00:00:00 GMT', 'kind': 2, 'sentence': '仮説'},
+            {'id': 11, 'author_id': 1, 'root_note_id': 9, 'created': 'Tue, 01 Jan 2019 00:00:00 GMT', 'updated': 'Tue, 01 Jan 2019 00:00:00 GMT', 'kind': 3, 'sentence': '実験'}
         ]}),
 ))
 def test_index(client, query_parameter, res_payload):
@@ -91,10 +87,10 @@ def test_create_validate_input(client, req_payload, res_payload):
 
 # ノート作成 正常系
 @pytest.mark.parametrize(('req_payload', 'res_payload', 'will_insert_note'), (
-    ({'kind': 1, 'sentence': '観察'}, {'id': 7},
-        {'id': 7, 'author_id': 1, 'root_note_id': 7, 'kind': 1, 'sentence': '観察'}),
-    ({'root_note_id': 5, 'kind': 2, 'sentence': '仮説'}, {'id': 7},
-        {'id': 7, 'author_id': 1, 'root_note_id': 5, 'kind': 2, 'sentence': '仮説'}),
+    (                   {'kind': 1, 'sentence': '観察'}, {'id': 12}, {'id': 12, 'author_id': 1, 'root_note_id': 12, 'kind': 1, 'sentence': '観察'}),
+    ({'root_note_id': 5, 'kind': 2, 'sentence': '仮説'}, {'id': 12}, {'id': 12, 'author_id': 1, 'root_note_id': 5, 'kind': 2, 'sentence': '仮説'}),
+    ({'root_note_id': 7, 'kind': 3, 'sentence': '実験'}, {'id': 12}, {'id': 12, 'author_id': 1, 'root_note_id': 7, 'kind': 3, 'sentence': '実験'}),
+    ({'root_note_id': 9, 'kind': 4, 'sentence': '考察'}, {'id': 12}, {'id': 12, 'author_id': 1, 'root_note_id': 9, 'kind': 4, 'sentence': '考察'}),
 ))
 def test_create(app, client, req_payload, res_payload, will_insert_note):
     response = client.post('/',
@@ -161,9 +157,7 @@ def test_update_validate_input(app, client, req_payload, res_payload):
 
 # ノート更新 正常系
 @pytest.mark.parametrize(('req_payload', 'will_update_note'), (
-    ({'id': 1, 'sentence': '変更された観察'},
-        {'id': 1, 'author_id': 1, 'root_note_id': 1,'created': '2019-01-01 00:00:00',
-            'kind': 1, 'sentence': '変更された観察'}),
+    ({'id': 1, 'sentence': '変更された観察'}, {'id': 1, 'author_id': 1, 'root_note_id': 1,'created': '2019-01-01 00:00:00', 'kind': 1, 'sentence': '変更された観察'}),
 ))
 def test_update(app, client, req_payload, will_update_note):
     response = client.put('/',
@@ -228,9 +222,7 @@ def test_update_validate_input(client, req_payload, res_payload):
 # ノート削除 正常系
 @pytest.mark.parametrize(('req_payload', 'will_remain_note'), (
     ({'id': 1}, []),
-    ({'id': 2}, [{'id': 1, 'author_id': 1, 'root_note_id': 1,
-                  'created': datetime(2019, 1, 1, 0, 0), 'updated': datetime(2019, 1, 1, 0, 0),
-                  'kind': 1, 'sentence': '観察'}]),
+    ({'id': 2}, [{'id': 1, 'author_id': 1, 'root_note_id': 1, 'created': datetime(2019, 1, 1, 0, 0), 'updated': datetime(2019, 1, 1, 0, 0), 'kind': 1, 'sentence': '観察'}]),
 ))
 def test_update_validate_input(app, client, req_payload, will_remain_note):
     response = client.delete('/',

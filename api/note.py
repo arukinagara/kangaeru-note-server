@@ -76,14 +76,14 @@ def create():
     elif not sentence:
         message = 'Sentence is required.'
     elif root_note_id and db.execute(
-        'SELECT * FROM note '
+        'SELECT * FROM note'
         ' WHERE root_note_id = ? AND kind = ?',
         (root_note_id, kind)
     ).fetchone() is not None:
         message = 'Not related note.'
     elif root_note_id and db.execute(
-        'SELECT * FROM note '
-        ' WHERE id = ? AND author_id = ? AND kind = ?',
+        'SELECT * FROM note'
+        ' WHERE root_note_id = ? AND author_id = ? AND kind = ?',
         (root_note_id, get_current_user()['id'], kind - 1)
     ).fetchone() is None:
         message = 'Not related note.'
@@ -94,7 +94,7 @@ def create():
             (get_current_user()['id'], root_note_id, kind, sentence)
         )
         inserted_note = db.execute(
-            'SELECT id FROM note WHERE author_id = ? ORDER BY created DESC',
+            'SELECT * FROM note WHERE author_id = ? ORDER BY id DESC',
             (get_current_user()['id'],)
         ).fetchone()
 
