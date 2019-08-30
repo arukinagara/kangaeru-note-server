@@ -79,9 +79,9 @@ def login():
     ).fetchone()
 
     if user is None:
-        message = 'Incorrect username.'
+        message = 'Incorrect username or password.'
     elif not check_password_hash(user['password'], password):
-        message = 'Incorrect password.'
+        message = 'Incorrect username or password.'
 
     if message is None:
         # flask_jwt_extendedを使ってユーザ名からアクセス/リフレッシュトークンを生成する
@@ -90,6 +90,10 @@ def login():
             'refresh_token': create_refresh_token(identity = username)
         }
         return jsonify(ret), 200
+
+    return jsonify({
+        'message': message
+    }), 401
 
 
 # アクセストークンが切れた場合、リフレッシュトークンでこのURIにアクセスし、アクセストークンを更新する

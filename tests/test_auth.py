@@ -43,15 +43,15 @@ def test_register(app, client, req_payload):
 
 # ログイン 異常系
 @pytest.mark.parametrize(('req_payload', 'res_payload'), (
-    ({'username': '', 'password': ''}, {'message': 'Username is required.'}),
-    ({'username': 'user', 'password': ''}, {'message': 'Password is required.'}),
+    ({'username': 'tes',  'password': 'password'}, {'message': 'Incorrect username or password.'}),
+    ({'username': 'test', 'password': 'passwor'},  {'message': 'Incorrect username or password.'}),
 ))
 def test_login_validate_input(client, req_payload, res_payload):
-    response = client.post('/auth/register',
+    response = client.post('/auth/login',
         headers = {'Content-Type': 'application/json'},
         data = json.dumps(req_payload),
     )
-    assert response.status_code == 400
+    assert response.status_code == 401
     assert json.loads(response.data) == res_payload
 
 
