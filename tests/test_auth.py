@@ -80,10 +80,10 @@ def test_login(app, client, req_payload):
 
 
 # リフレッシュトークン
-@pytest.mark.parametrize(('req_payload'), (
+@pytest.mark.parametrize(('auth_info'), (
     ({'username': 'test', 'password': 'test'}),
 ))
-def test_refresh(app, client, req_payload):
+def test_refresh(app, client, auth_info):
     with app.app_context():
         # テスト用にアクセストークンの有効期限を1秒に設定する
         app.config['JWT_ACCESS_TOKEN_EXPIRES'] = datetime.timedelta(seconds=1)
@@ -95,8 +95,8 @@ def test_refresh(app, client, req_payload):
         def access_protected():
             return 'ok'
 
-        access_token = create_access_token(req_payload['username'])
-        refresh_token = create_refresh_token(req_payload['username'])
+        access_token = create_access_token(auth_info['username'])
+        refresh_token = create_refresh_token(auth_info['username'])
 
         response = client.get('/protected',
             headers = {
