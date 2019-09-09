@@ -1,30 +1,12 @@
-from flask import Flask, current_app, Blueprint, g, request, jsonify
+from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_current_user
 from werkzeug.exceptions import abort
 from datetime import datetime
-from api.db import get_db
+from api.db import db_session
+from api.model import User, Note
+from sqlalchemy import asc, desc
 
 bp = Blueprint('note', __name__)
-
-
-# # blueprint内でappを使用するための設定
-# app = Flask(__name__)
-# # 使用する時はwith句内で、current_appとして使う
-# with app.app_context():
-#     jwt = JWTManager(current_app)
-#
-#     # get_current_userがコールされると(ここではnote.pyで使用している)、
-#     # @user_loader_callback_loaderが付与されているメソッドが呼ばれる
-#     # identityはユーザ名で、ユーザオブジェクトが返却されるように作っている
-#     @jwt.user_loader_callback_loader
-#     def user_loader_callback(identity):
-#         db = get_db()
-#         current_user = db.execute(
-#             'SELECT * FROM user WHERE username = ?',
-#             (identity,)
-#         ).fetchone()
-#
-#         return current_user
 
 
 @bp.route('/', methods=['GET'])
@@ -32,33 +14,26 @@ bp = Blueprint('note', __name__)
 def index():
     root_note_id :int = request.args.get('root')
     kind :int = request.args.get('kind')
-    notes = []
-    db = get_db()
-
-    select_statement = 'SELECT n.id, author_id, root_note_id, created, updated, kind, sentence'\
-                       ' FROM note n JOIN user u ON n.author_id = u.id'
 
     if root_note_id:
-        notes = db.execute(
-            select_statement
-            + ' WHERE root_note_id = ? AND author_id = ? ORDER BY kind ASC',
-            (root_note_id, get_current_user()['id'])
-        ).fetchall()
+        notes = Note.query.filter(Note.root_note_id == root_note_id,
+                                  Note.author_id == get_current_user().id)\
+                          .order_by(asc(Note.kind))\
+                          .all()
     elif kind:
-        notes = db.execute(
-            select_statement
-            + ' WHERE kind = ? AND author_id = ? ORDER BY updated DESC',
-            (kind, get_current_user()['id'])
-        ).fetchall()
+        notes = Note.query.filter(Note.kind == 1,
+                                  Note.author_id == get_current_user().id)\
+                          .order_by(desc(Note.updated))\
+                          .all()
     else:
-        notes = db.execute(
-            select_statement
-            + ' WHERE author_id = ? ORDER BY n.id ASC',
-            (get_current_user()['id'],)
-        ).fetchall()
+        notes = Note.query.filter(Note.author_id == get_current_user().id)\
+                          .order_by(asc(Note.id))\
+                          .all()
+
+    ret = [note.as_dict() for note in notes]
 
     return jsonify({
-        'notes': notes
+        'notes': ret
     }), 200
 
 
@@ -68,46 +43,37 @@ def create():
     root_note_id = request.get_json().get('root_note_id')
     kind = request.get_json().get('kind')
     sentence = request.get_json().get('sentence')
-    db = get_db()
     message = None
 
     if not kind:
         message = 'Kind is required.'
     elif not sentence:
         message = 'Sentence is required.'
-    elif root_note_id and db.execute(
-        'SELECT * FROM note'
-        ' WHERE root_note_id = ? AND kind = ?',
-        (root_note_id, kind)
-    ).fetchone() is not None:
+    elif root_note_id and Note.query.filter(Note.root_note_id == root_note_id,
+                                            Note.kind == kind)\
+                                    .first() is not None:
         message = 'Not related note.'
-    elif root_note_id and db.execute(
-        'SELECT * FROM note'
-        ' WHERE root_note_id = ? AND author_id = ? AND kind = ?',
-        (root_note_id, get_current_user()['id'], kind - 1)
-    ).fetchone() is None:
+    elif root_note_id and Note.query.filter(Note.root_note_id == root_note_id,
+                                            Note.author_id == get_current_user().id,
+                                            Note.kind == kind - 1)\
+                                    .first() is None:
         message = 'Not related note.'
+
 
     if message is None:
-        db.execute(
-            'INSERT INTO note (author_id, root_note_id, kind, sentence) VALUES (?, ?, ?, ?)',
-            (get_current_user()['id'], root_note_id, kind, sentence)
-        )
-        inserted_note = db.execute(
-            'SELECT * FROM note WHERE author_id = ? ORDER BY id DESC',
-            (get_current_user()['id'],)
-        ).fetchone()
+        note = Note(get_current_user().id, root_note_id, None, None, kind, sentence)
+        db_session.add(note)
+        db_session.commit()
+        inserted_note = Note.query.filter(Note.author_id == get_current_user().id)\
+                                  .order_by(desc(Note.id))\
+                                  .first()
 
         if root_note_id is None:
-            db.execute(
-                'UPDATE note SET root_note_id = ? WHERE id = ?',
-                (inserted_note['id'], inserted_note['id'])
-            )
-
-        db.commit()
+            note.root_note_id = inserted_note.id
+            db_session.commit()
 
         return jsonify({
-            'id': inserted_note['id']
+            'id': inserted_note.id
         }), 201
 
     return jsonify({
@@ -120,26 +86,24 @@ def create():
 def update():
     id = request.get_json().get('id')
     sentence = request.get_json().get('sentence')
-    db = get_db()
     message = None
 
     if not id:
         message = 'Id is required.'
     elif not sentence:
         message = 'Sentence is required.'
-    elif db.execute(
-        'SELECT * FROM note '
-        ' WHERE id = ? AND author_id = ?',
-        (id, get_current_user()['id'],)
-    ).fetchone() is None:
+    elif Note.query.filter(Note.id == id,
+                           Note.author_id == get_current_user().id)\
+                   .first() is None:
         message = 'Note not found.'
 
     if message is None:
-        db.execute(
-            'UPDATE note SET sentence = ?, updated = ? WHERE id = ? AND author_id = ?',
-            (sentence, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), id, get_current_user()['id'])
-        )
-        db.commit()
+        note = Note.query.filter(Note.id == id,
+                                 Note.author_id == get_current_user().id)\
+                         .first()
+        note.sentence = sentence
+        note.updated = datetime.now()
+        db_session.commit()
 
         return jsonify(), 204
 
@@ -152,29 +116,24 @@ def update():
 @jwt_required
 def destroy():
     id = request.get_json().get('id')
-    db = get_db()
     message = None
 
     if not id:
         message = 'Id is required.'
-    elif db.execute(
-        'SELECT * FROM note '
-        ' WHERE id = ? AND author_id = ?',
-        (id, get_current_user()['id'])
-    ).fetchone() is None:
+
+    note = Note.query.filter(Note.id == id,
+                             Note.author_id == get_current_user().id)\
+                     .first()
+
+    if note is None:
         message = 'Note not found.'
 
-    deleted_note = db.execute(
-        'SELECT * FROM note WHERE id = ? AND author_id = ?',
-        (id, get_current_user()['id'])
-    ).fetchone()
-
     if message is None:
-        db.execute(
-            'DELETE FROM note WHERE root_note_id = ? AND kind >= ?',
-            (deleted_note['root_note_id'], deleted_note['kind'])
-        )
-        db.commit()
+        Note.query.filter(Note.root_note_id == id,
+                          Note.author_id == get_current_user().id,
+                          Note.kind >= note.kind)\
+                  .delete()
+        db_session.commit()
 
         return jsonify(), 204
 

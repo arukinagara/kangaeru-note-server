@@ -3,7 +3,8 @@ import os
 from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
-from api.db import get_db
+from api.db import init_app, db_session
+from api.model import User
 
 def create_app(test_config=None):
     # create and configure the app
@@ -16,6 +17,10 @@ def create_app(test_config=None):
         JWT_ERROR_MESSAGE_KEY='message',
     )
 
+    @app.teardown_appcontext
+    def shutdown_session(exception=None):
+        db_session.remove()
+
     # enable CORS
     CORS(app, resources={r'/*': {'origins': '*'}})
 
@@ -23,11 +28,7 @@ def create_app(test_config=None):
     jwt = JWTManager(app)
     @jwt.user_loader_callback_loader
     def user_loader_callback(identity):
-        db = get_db()
-        current_user = db.execute(
-            'SELECT * FROM user WHERE username = ?',
-            (identity,)
-        ).fetchone()
+        current_user = User.query.filter(User.username == identity).first()
         return current_user
 
     if test_config is None:

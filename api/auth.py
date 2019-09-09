@@ -1,64 +1,37 @@
 import functools
-from flask import Flask, current_app, Blueprint, g, request, jsonify
+from flask import Blueprint, request, jsonify
 from flask_jwt_extended import (
     create_access_token, create_refresh_token, jwt_refresh_token_required,
     get_jwt_identity
 )
 from werkzeug.security import check_password_hash, generate_password_hash
-from api.db import get_db
+from api.db import db_session
+from api.model import User
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
-
-
-# # blueprint内でappを使用するための設定
-# app = Flask(__name__)
-# # 使用する時はwith句内で、current_appとして使う
-# with app.app_context():
-#     jwt = JWTManager(current_app)
-#
-#     # get_current_userがコールされると(ここではnote.pyで使用している)、
-#     # @user_loader_callback_loaderが付与されているメソッドが呼ばれる
-#     # identityはユーザ名で、ユーザオブジェクトが返却されるように作っている
-#     @jwt.user_loader_callback_loader
-#     def user_loader_callback(identity):
-#         db = get_db()
-#         current_user = db.execute(
-#             'SELECT * FROM user WHERE username = ?',
-#             (identity,)
-#         ).fetchone()
-#
-#         return current_user
 
 
 @bp.route('/register', methods=['POST'])
 def register():
     username = request.get_json().get('username')
     password = request.get_json().get('password')
-    db = get_db()
     message = None
 
     if not username:
         message = 'Username is required.'
     elif not password:
         message = 'Password is required.'
-    elif db.execute(
-        'SELECT id FROM user WHERE username = ?', (username,)
-    ).fetchone() is not None:
+    elif User.query.filter(User.username == username).first() is not None:
         message = 'User {} is already registered.'.format(username)
 
     if message is None:
-        db.execute(
-            'INSERT INTO user (username, password) VALUES (?, ?)',
-            (username, generate_password_hash(password))
-        )
-        inserted_user = db.execute(
-            'SELECT id FROM user WHERE username = ?',
-            (username,)
-        ).fetchone()
-        db.commit()
+        user = User(username, generate_password_hash(password))
+        db_session.add(user)
+        db_session.commit()
+        inserted_user = User.query.filter(User.username == username).first()
 
         return jsonify({
-            'id': inserted_user['id']
+            'id': inserted_user.id
         }), 201
 
     return jsonify({
@@ -70,17 +43,13 @@ def register():
 def login():
     username = request.get_json().get('username')
     password = request.get_json().get('password')
-    db = get_db()
     message = None
 
-    user = db.execute(
-        'SELECT * FROM user WHERE username = ?',
-        (username,)
-    ).fetchone()
+    user = User.query.filter(User.username == username).first()
 
     if user is None:
         message = 'Incorrect username or password.'
-    elif not check_password_hash(user['password'], password):
+    elif not check_password_hash(user.password, password):
         message = 'Incorrect username or password.'
 
     if message is None:
