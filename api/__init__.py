@@ -3,23 +3,21 @@ import os
 from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
-from api.db import init_app, db_session
+from api.db import db
 from api.model import User
 
 def create_app(test_config=None):
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_mapping(
-        SECRET_KEY='dev',
-        DATABASE=os.path.join(app.instance_path, 'api.sqlite'),
+        SECRET_KEY = 'dev',
+        # flask-SQLAlchemy用の定義
+        SQLALCHEMY_DATABASE_URI = 'sqlite:////Users/dev/server/instance/api.sqlite',
+        SQLALCHEMY_TRACK_MODIFICATIONS = False,
         # flask_jwt_extended用の定義
         JWT_SECRET_KEY='super-secret',
         JWT_ERROR_MESSAGE_KEY='message',
     )
-
-    @app.teardown_appcontext
-    def shutdown_session(exception=None):
-        db_session.remove()
 
     # enable CORS
     CORS(app, resources={r'/*': {'origins': '*'}})

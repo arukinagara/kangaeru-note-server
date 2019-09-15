@@ -5,7 +5,7 @@ from flask_jwt_extended import (
     get_jwt_identity
 )
 from werkzeug.security import check_password_hash, generate_password_hash
-from api.db import db_session
+from api.db import db
 from api.model import User
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
@@ -26,8 +26,8 @@ def register():
 
     if message is None:
         user = User(username, generate_password_hash(password))
-        db_session.add(user)
-        db_session.commit()
+        db.session.add(user)
+        db.session.commit()
         inserted_user = User.query.filter(User.username == username).first()
 
         return jsonify({

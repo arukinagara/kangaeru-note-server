@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_current_user
 from werkzeug.exceptions import abort
 from datetime import datetime
-from api.db import db_session
+from api.db import db
 from api.model import User, Note
 from sqlalchemy import asc, desc
 
@@ -62,15 +62,15 @@ def create():
 
     if message is None:
         note = Note(get_current_user().id, root_note_id, None, None, kind, sentence)
-        db_session.add(note)
-        db_session.commit()
+        db.session.add(note)
+        db.session.commit()
         inserted_note = Note.query.filter(Note.author_id == get_current_user().id)\
                                   .order_by(desc(Note.id))\
                                   .first()
 
         if root_note_id is None:
             note.root_note_id = inserted_note.id
-            db_session.commit()
+            db.session.commit()
 
         return jsonify({
             'id': inserted_note.id
@@ -103,7 +103,7 @@ def update():
                          .first()
         note.sentence = sentence
         note.updated = datetime.now()
-        db_session.commit()
+        db.session.commit()
 
         return jsonify(), 204
 
@@ -133,7 +133,7 @@ def destroy():
                           Note.author_id == get_current_user().id,
                           Note.kind >= note.kind)\
                   .delete()
-        db_session.commit()
+        db.session.commit()
 
         return jsonify(), 204
 

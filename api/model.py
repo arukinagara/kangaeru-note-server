@@ -1,13 +1,13 @@
 from sqlalchemy import Column, Integer, String, Text, DateTime
 from sqlalchemy.sql.functions import current_timestamp
-from api.db import Base
+from api.db import db
 
 
-class User(Base):
+class User(db.Model):
     __tablename__ = 'user'
-    id = Column(Integer, primary_key=True)
-    username = Column(String(64), unique=False, nullable=False)
-    password = Column(String(64), unique=False, nullable=False)
+    id = db.Column(Integer, primary_key=True)
+    username = db.Column(String(64), unique=False, nullable=False)
+    password = db.Column(String(64), unique=False, nullable=False)
 
     def __init__(self, username = None, password = None):
         self.username = username
@@ -20,15 +20,15 @@ class User(Base):
        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
 
-class Note(Base):
+class Note(db.Model):
     __tablename__ = 'note'
-    id = Column(Integer, primary_key=True)
-    author_id = Column(Integer, unique=False, nullable=False)
-    root_note_id = Column(Integer, unique=False, nullable=True)
-    created = Column(DateTime, unique=False, nullable=False, server_default=current_timestamp())
-    updated = Column(DateTime, unique=False, nullable=False, server_default=current_timestamp())
-    kind = Column(Integer, unique=False, nullable=False)
-    sentence = Column(Text, unique=False, nullable=False)
+    id = db.Column(Integer, primary_key=True)
+    author_id = db.Column(Integer, unique=False, nullable=False)
+    root_note_id = db.Column(Integer, unique=False, nullable=True)
+    created = db.Column(DateTime, unique=False, nullable=False, server_default=current_timestamp())
+    updated = db.Column(DateTime, unique=False, nullable=False, server_default=current_timestamp())
+    kind = db.Column(Integer, unique=False, nullable=False)
+    sentence = db.Column(Text, unique=False, nullable=False)
 
     def __init__(self, author_id = None, root_note_id = None,
                  created = None, updated = None, kind = None, sentence = None):
