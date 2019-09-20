@@ -7,7 +7,8 @@ from flask_jwt_extended import (
     JWTManager, create_access_token, create_refresh_token, jwt_required,
     jwt_refresh_token_required, get_jwt_identity, decode_token
 )
-from api.db import get_db
+from api.db import db
+from api.model import User
 
 
 # ユーザ登録 異常系
@@ -36,9 +37,7 @@ def test_register(app, client, req_payload):
     )
     assert response.status_code == 201
     with app.app_context():
-        assert get_db().execute(
-            "SELECT * FROM user WHERE username = 'user'",
-        ).fetchone() is not None
+        assert User.query.filter(User.username == 'user').first() != None
 
 
 # ログイン 異常系

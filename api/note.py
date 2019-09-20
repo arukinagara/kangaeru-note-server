@@ -118,19 +118,17 @@ def destroy():
     id = request.get_json().get('id')
     message = None
 
-    if not id:
-        message = 'Id is required.'
-
     note = Note.query.filter(Note.id == id,
                              Note.author_id == get_current_user().id)\
                      .first()
 
-    if note is None:
+    if not id:
+        message = 'Id is required.'
+    elif Note is None:
         message = 'Note not found.'
 
     if message is None:
-        Note.query.filter(Note.root_note_id == id,
-                          Note.author_id == get_current_user().id,
+        Note.query.filter(Note.author_id == get_current_user().id,
                           Note.kind >= note.kind)\
                   .delete()
         db.session.commit()
