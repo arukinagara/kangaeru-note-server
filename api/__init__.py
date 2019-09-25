@@ -12,7 +12,8 @@ def create_app(test_config=None):
     app.config.from_mapping(
         SECRET_KEY = 'dev',
         # flask-SQLAlchemy用の定義
-        SQLALCHEMY_DATABASE_URI = 'sqlite:////Users/dev/server/instance/api.sqlite',
+        SQLALCHEMY_DATABASE_URI = 'sqlite:////app/server/instance/api.sqlite',
+        # SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:postgres@db/postgres',
         SQLALCHEMY_TRACK_MODIFICATIONS = False,
         # flask_jwt_extended用の定義
         JWT_SECRET_KEY='super-secret',
