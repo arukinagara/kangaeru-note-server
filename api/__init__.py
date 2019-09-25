@@ -10,14 +10,14 @@ def create_app(test_config=None):
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_mapping(
-        SECRET_KEY = 'dev',
+        SECRET_KEY = os.urandom(24),
         # flask-SQLAlchemy用の定義
         SQLALCHEMY_DATABASE_URI = 'sqlite:////app/server/instance/api.sqlite',
         # SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:postgres@db/postgres',
         SQLALCHEMY_TRACK_MODIFICATIONS = False,
         # flask_jwt_extended用の定義
-        JWT_SECRET_KEY='super-secret',
-        JWT_ERROR_MESSAGE_KEY='message',
+        JWT_SECRET_KEY = os.urandom(24),
+        JWT_ERROR_MESSAGE_KEY = 'message',
     )
 
     # enable CORS
