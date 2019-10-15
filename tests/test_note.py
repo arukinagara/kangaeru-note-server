@@ -35,7 +35,7 @@ from api.model import User, Note
         ]}),
 ))
 def test_index(client, query_parameter, res_payload):
-    response = client.get('/')
+    response = client.get('/notes')
 
     assert response.status_code == 401
     assert json.loads(response.data) == {'message': 'Missing Authorization Header'}
@@ -47,7 +47,7 @@ def test_index(client, query_parameter, res_payload):
 
     access_token = json.loads(login_response.data)['access_token']
 
-    index_response = client.get('/' + query_parameter,
+    index_response = client.get('/notes' + query_parameter,
         headers = {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer {}'.format(access_token)},
@@ -74,7 +74,7 @@ def test_create_validate_input(client, req_payload, res_payload):
 
     access_token = json.loads(login_response.data)['access_token']
 
-    create_response = client.post('/',
+    create_response = client.post('/notes',
         headers = {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer {}'.format(access_token)},
@@ -93,7 +93,7 @@ def test_create_validate_input(client, req_payload, res_payload):
     ({'root_note_id': 9, 'kind': 4, 'sentence': '考察'}, {'id': 12}, {'id': 12, 'author_id': 1, 'root_note_id': 9, 'kind': 4, 'sentence': '考察'}),
 ))
 def test_create(app, client, req_payload, res_payload, will_insert_note):
-    response = client.post('/',
+    response = client.post('/notes',
         headers = {'Content-Type': 'application/json'},
         data = json.dumps(req_payload)
     )
@@ -108,7 +108,7 @@ def test_create(app, client, req_payload, res_payload, will_insert_note):
 
     access_token = json.loads(login_response.data)['access_token']
 
-    create_response = client.post('/',
+    create_response = client.post('/notes',
         headers = {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer {}'.format(access_token)},
@@ -141,7 +141,7 @@ def test_update_validate_input(app, client, req_payload, res_payload):
     )
 
     access_token = json.loads(login_response.data)['access_token']
-    update_response = client.put('/',
+    update_response = client.put('/notes',
         headers = {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer {}'.format(access_token)},
@@ -157,7 +157,7 @@ def test_update_validate_input(app, client, req_payload, res_payload):
     ({'id': 1, 'sentence': '変更された観察'}, {'id': 1, 'author_id': 1, 'root_note_id': 1,'created': '2019-01-01 00:00:00', 'kind': 1, 'sentence': '変更された観察'}),
 ))
 def test_update(app, client, req_payload, will_update_note):
-    response = client.put('/',
+    response = client.put('/notes',
         headers = {'Content-Type': 'application/json'},
         data = json.dumps(req_payload)
     )
@@ -172,7 +172,7 @@ def test_update(app, client, req_payload, will_update_note):
 
     access_token = json.loads(login_response.data)['access_token']
 
-    update_response = client.put('/',
+    update_response = client.put('/notes',
         headers = {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer {}'.format(access_token)},
@@ -202,7 +202,7 @@ def test_update_validate_input(client, req_payload, res_payload):
     )
 
     access_token = json.loads(login_response.data)['access_token']
-    delete_response = client.delete('/',
+    delete_response = client.delete('/notes',
         headers = {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer {}'.format(access_token)},
@@ -219,7 +219,7 @@ def test_update_validate_input(client, req_payload, res_payload):
     ({'id': 2}, [{'id': 1, 'author_id': 1, 'root_note_id': 1, 'created': datetime(2019, 1, 1, 0, 0), 'updated': datetime(2019, 1, 1, 0, 0), 'kind': 1, 'sentence': '観察'}]),
 ))
 def test_update_validate_input(app, client, req_payload, will_remain_note):
-    response = client.delete('/',
+    response = client.delete('/notes',
         headers = {'Content-Type': 'application/json'},
         data = json.dumps(req_payload)
     )
@@ -234,7 +234,7 @@ def test_update_validate_input(app, client, req_payload, will_remain_note):
 
     access_token = json.loads(login_response.data)['access_token']
 
-    delete_response = client.delete('/',
+    delete_response = client.delete('/notes',
         headers = {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer {}'.format(access_token)},

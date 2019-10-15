@@ -9,7 +9,7 @@ from sqlalchemy import asc, desc
 bp = Blueprint('note', __name__)
 
 
-@bp.route('/', methods=['GET'])
+@bp.route('/notes', methods=['GET'])
 @jwt_required
 def index():
     root_note_id :int = request.args.get('root')
@@ -37,7 +37,7 @@ def index():
     }), 200
 
 
-@bp.route('/', methods=['POST'])
+@bp.route('/notes', methods=['POST'])
 @jwt_required
 def create():
     root_note_id = request.get_json().get('root_note_id')
@@ -81,7 +81,7 @@ def create():
     }), 400
 
 
-@bp.route('/', methods=['PUT'])
+@bp.route('/notes', methods=['PUT'])
 @jwt_required
 def update():
     id = request.get_json().get('id')
@@ -112,7 +112,7 @@ def update():
     }), 400
 
 
-@bp.route('/', methods=['DELETE'])
+@bp.route('/notes', methods=['DELETE'])
 @jwt_required
 def destroy():
     id = request.get_json().get('id')
