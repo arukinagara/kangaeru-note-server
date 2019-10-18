@@ -44,7 +44,7 @@ def create_app(test_config=None):
         pass
 
     # sanity check route
-    @app.route('/hello', methods=['GET'])
+    @app.route('/ping', methods=['GET'])
     def hello():
         return jsonify('Hello, World!!')
 
