@@ -13,7 +13,7 @@ def create_app(test_config=None):
         SECRET_KEY = os.urandom(24),
         # flask-SQLAlchemy用の定義
         # SQLALCHEMY_DATABASE_URI = 'sqlite:////app/server/instance/api.sqlite',
-        SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:postgres@db/postgres',
+        SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'postgresql://postgres:postgres@db/postgres',
         SQLALCHEMY_TRACK_MODIFICATIONS = False,
         # flask_jwt_extended用の定義
         JWT_SECRET_KEY = os.urandom(24),
